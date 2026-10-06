@@ -1,0 +1,14 @@
+# design docs, decision log, notebook — local-only, never on GitHub
+docs/
+# python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+# runs
+results/**/*.pt
+results/**/*.onnx
+results/**/checkpoints/
+wandb/
+# os
+.DS_Store
