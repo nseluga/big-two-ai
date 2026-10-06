@@ -66,9 +66,13 @@ def test_home_slot_equals_canonical_id_but_literature_differs():
 
 
 def test_card_names():
-    assert card_name(id_of("3S"), 1) == "3S"
-    assert card_name(id_of("10H"), 1) == "10H"
-    assert card_name(id_of("2D"), 1) == "2D"
+    # Literal ids, not id_of(): id_of looks names up via card_name, so it can't check it.
+    assert card_name(0, 1) == "3S"
+    assert card_name(2, 1) == "3C"
+    assert card_name(62, 1) == "10H"
+    assert card_name(66, 1) == "JC"
+    assert card_name(100, 1) == "2D"
+    assert card_name(102, 1) == "2H"
     assert card_name(103, 2) == "2Hg"
     assert card_name(102, 2) == "2Hb"
 

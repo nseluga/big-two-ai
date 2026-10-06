@@ -1,5 +1,6 @@
 """Tests for dealing: config shapes, reproducibility, and shuffle uniformity."""
 
+import hashlib
 import itertools
 import random
 from collections import Counter
@@ -70,3 +71,20 @@ def test_pinned_first_deal_seed_0():
     hands, aside = next(deal_stream(4, 1, seed=0, count=1))
     assert hands[0] == [2, 6, 8, 12, 14, 16, 28, 32, 34, 66, 70, 74, 96]
     assert aside == []
+
+
+# SHA-256 of repr(first 3 deals, seed 0): catches seat order, aside position, 2-deck card order.
+PINNED_DEALS = {
+    (3, 1): "41f272f726ed77de5d1baf6ca189476554338528abd200ed3107eed08eac6e2c",
+    (4, 1): "86fde4ff64ce597b7d7052be126f8a0a8bf1c808d74d1272b942f988d2049cf3",
+    (5, 1): "48840dd60d1b669ed2b60879b8e683bd5fdaba066d59d67d770f307702c94f47",
+    (6, 2): "5da67f9b7ce700c6f36da6f36ef99e7a0d3f955ac2ebe2399cfabe127ff00d9b",
+    (7, 2): "bba4f74837e1e9c6cacf439e739691b100d818b4ccaea7045d34529010769ed6",
+    (8, 2): "43c8743ef2752faa2186c050922965639621585eed0937e34feab003e4b85cb6",
+}
+
+
+@pytest.mark.parametrize("players, decks", CONFIGS)
+def test_pinned_deals_every_config(players, decks):
+    deals = list(deal_stream(players, decks, seed=0, count=3))
+    assert hashlib.sha256(repr(deals).encode()).hexdigest() == PINNED_DEALS[(players, decks)]
