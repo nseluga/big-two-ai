@@ -1,0 +1,3 @@
+[submodule "external/big2_PPOalgorithm"]
+	path = external/big2_PPOalgorithm
+	url = https://github.com/henrycharlesworth/big2_PPOalgorithm
