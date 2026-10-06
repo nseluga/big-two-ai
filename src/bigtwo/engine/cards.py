@@ -11,6 +11,9 @@ HOME_SUIT_ORDER = "SCDH"  # weakest to strongest: spades < clubs < diamonds < he
 LITERATURE_SUIT_ORDER = "DCHS"  # diamonds < clubs < hearts < spades
 
 RANK_NAMES = ("3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2")  # weakest first
+RANK_COUNT = len(RANK_NAMES)
+SLOTS_PER_RANK = 8  # 4 suits x 2 deck bits; a 1-deck hand uses only the even slots
+RANK_GROUP_MASK = (1 << SLOTS_PER_RANK) - 1
 
 
 def slot(card_id: int, suit_order: str) -> int:
@@ -39,9 +42,27 @@ def card_name(card_id: int, decks: int) -> str:
     return name
 
 
+# Import-time lookup tables for both variants: SLOT[order][card_id] and its inverse.
+SLOT = {order: [slot(card_id, order) for card_id in range(104)]
+        for order in (HOME_SUIT_ORDER, LITERATURE_SUIT_ORDER)}
+ID_OF_SLOT = {order: [0] * 104 for order in SLOT}
+for _order, _slots in SLOT.items():
+    for _card_id, _slot in enumerate(_slots):
+        ID_OF_SLOT[_order][_slot] = _card_id
+
+
+def rank_group(mask: int, rank: int) -> int:
+    """The 8 slot bits of one rank in a mask (bit 2*suit_strength + deck_bit)."""
+    return (mask >> (SLOTS_PER_RANK * rank)) & RANK_GROUP_MASK
+
+
 def pretty(mask: int, suit_order: str, decks: int) -> str:
     """Space-separated card names of a hand mask, weakest to strongest."""
-    # Invert slot() so each set bit maps back to its canonical id.
-    id_of_slot = {slot(card_id, suit_order): card_id for card_id in range(104)}
     slots = [i for i in range(104) if mask >> i & 1]
-    return " ".join(card_name(id_of_slot[i], decks) for i in slots)
+    return " ".join(card_name(ID_OF_SLOT[suit_order][i], decks) for i in slots)
+
+
+def from_names(names: str, suit_order: str, decks: int) -> int:
+    """Hand mask from space-separated card names, the inverse of pretty()."""
+    id_of_name = {card_name(i, decks): i for i in range(104) if i % 2 < decks}
+    return to_mask((id_of_name[name] for name in names.split()), suit_order)
