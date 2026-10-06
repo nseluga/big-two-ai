@@ -29,11 +29,10 @@ big-two-ai/
 - Compute: HMC CS GPU boxes (unverified) with a rented-GPU fallback; see plan §9.
 
 ## Rules that bind every session
-- **Go slow so Nate learns.** Every stage opens with a stage plan (`docs/stage-plans/<slug>.md`) approved before any code. Small steps, explain each before making it, wait for Nate's go-ahead between steps. No `/dev-team-auto`; subagents only on an approved step. Overrides the global "orchestrate, don't ask" default.
+- **Stage plan first, then normal pace.** Every stage opens with a stage plan (`docs/stage-plans/<slug>.md`) approved before any code. Within it, no per-step go-ahead; explain as you go, and the global orchestration defaults apply. Learning never blocks progress (manifest rules 5 and 8).
 - Frozen rules in the manifest. Sealed deal sets and the eval config are never edited in place.
 - Any strength claim needs duplicate deals, CIs, and ≥3 seeds.
 - No variant-specific hand features; tune on the literature variant only.
-- Every stage ends with a learning checkpoint Nate passes before the next stage starts.
 - Nothing tracked in git carries a bare stage letter/number — use the manifest's slugs.
 
 ## ML Verification Gate
