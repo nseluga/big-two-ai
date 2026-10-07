@@ -15,6 +15,7 @@ from typing import NamedTuple
 
 from bigtwo.engine.cards import (
     HOME_SUIT_ORDER,
+    LITERATURE_SUIT_ORDER,
     RANK_COUNT,
     RANK_NAMES,
     SLOTS_PER_RANK,
@@ -202,3 +203,98 @@ class HomeVariant(Variant):
         if kind in SIZE_OF_KIND:
             return self._of_a_kind(groups, [SIZE_OF_KIND[kind]])
         return self._sequences(groups, *sequence_shape(kind))
+
+
+# Literature: a follow must have the table's card count; then higher (tier, key) wins.
+LITERATURE_TIER = {"single": 0, "pair": 0, "triple": 0, "twopair": 0, "quad": 1,
+                   "straight": 0, "flush": 1, "fullhouse": 2, "straightflush": 3}
+STRAIGHT_LENGTH = 5
+THREE_DIAMONDS = 1  # slot 0 in literature order
+
+
+def suit_of(card: int) -> int:
+    """Suit strength index (0-3) of a single-card 1-deck mask."""
+    return (card.bit_length() - 1) >> 1 & 3
+
+
+class LiteratureVariant(Variant):
+    """Charlesworth's rules at eea4b04 (docs/rules-literature.md), quirks included.
+
+    kind is the poker pattern ("single", "twopair", "fullhouse", ...); key is the top
+    card's slot (full house: the triple's top slot), matching his comparisons by card id.
+    """
+
+    suit_order = LITERATURE_SUIT_ORDER
+    decks = 1
+    pass_locks = False
+
+    def beats(self, move: Move, table: Move) -> bool:
+        # Quirk: nothing follows a straight flush (enumerateOptions.py:48, :93, :127).
+        if table.kind == "straightflush" or move.cards.bit_count() != table.cards.bit_count():
+            return False
+        return (LITERATURE_TIER[move.kind], move.key) > (LITERATURE_TIER[table.kind], table.key)
+
+    def opening(self, hands: list[int]) -> int:
+        return next(seat for seat, hand in enumerate(hands) if hand & THREE_DIAMONDS)
+
+    def legal_moves(self, state) -> list[Move]:
+        if not state.history:
+            # Quirk: the 3♦ holder's first move is forced to the single 3♦ (big2Game.py:68).
+            return [Move(THREE_DIAMONDS, "single", 0)]
+        groups = rank_cards(state.hands[state.turn])
+        table = state.last_move
+        if table is None:  # control: any pattern, no pass
+            return self._all_moves(groups)
+        return [move for move in self._all_moves(groups) if self.beats(move, table)] + [PASS]
+
+    def is_over(self, state) -> bool:
+        return len(state.finish_order) >= 1
+
+    def score(self, state) -> list[int]:
+        # Winner: cards left in the other hands; each loser: minus own cards (big2Game.py:336).
+        points = [-hand.bit_count() for hand in state.hands]
+        points[state.finish_order[0]] = -sum(points)
+        return points
+
+    @staticmethod
+    def _triples(group: list[int]) -> list[int]:
+        # Quirk: fillThreeOfAKinds (gameLogic.py:423) never forms ♦♣♠ from a full rank.
+        triples = [sum(combo) for combo in combinations(group, 3)]
+        if len(group) == 4:
+            triples.remove(group[0] | group[1] | group[3])
+        return triples
+
+    def _all_moves(self, groups) -> list[Move]:
+        top = lambda cards: cards.bit_length() - 1
+        pairs = [[sum(c) for c in combinations(g, 2)] for g in groups]
+        triples = [self._triples(g) for g in groups]
+        moves = [Move(card, "single", top(card)) for g in groups for card in g]
+        moves += [Move(p, "pair", top(p)) for ps in pairs for p in ps]
+        moves += [Move(t, "triple", top(t)) for ts in triples for t in ts]
+        moves += [Move(sum(g), "quad", top(sum(g))) for g in groups if len(g) == 4]
+        for low, high in combinations(range(RANK_COUNT), 2):
+            moves += [Move(a | b, "twopair", top(b)) for a in pairs[low] for b in pairs[high]]
+        for t_rank, p_rank in product(range(RANK_COUNT), repeat=2):
+            if t_rank != p_rank:
+                moves += [Move(t | p, "fullhouse", top(t)) for t in triples[t_rank]
+                          for p in pairs[p_rank]]
+        # Straights (5 consecutive ranks, no wrap) and flushes; a straight flush is both.
+        fives = set()
+        for start in range(RANK_COUNT - STRAIGHT_LENGTH + 1):
+            fives.update(sum(c) for c in product(*groups[start:start + STRAIGHT_LENGTH]))
+        cards = [card for g in groups for card in g]
+        for suit in range(4):
+            fives.update(sum(c) for c in combinations([x for x in cards if suit_of(x) == suit], 5))
+        for five in fives:
+            moves.append(Move(five, self._five_kind(five), top(five)))
+        return moves
+
+    @staticmethod
+    def _five_kind(cards: int) -> str:
+        slots = [bit for bit in range(cards.bit_length()) if cards >> bit & 1]
+        ranks = {slot // SLOTS_PER_RANK for slot in slots}
+        is_straight = len(ranks) == STRAIGHT_LENGTH and max(ranks) - min(ranks) == STRAIGHT_LENGTH - 1
+        is_flush = len({slot >> 1 & 3 for slot in slots}) == 1
+        if is_straight:
+            return "straightflush" if is_flush else "straight"
+        return "flush"
