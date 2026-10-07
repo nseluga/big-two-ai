@@ -90,6 +90,14 @@ def test_heuristic_plan_partitions_the_hand_in_fewest_combos():
     assert union == hand
 
 
+def test_heuristic_plan_depends_only_on_the_current_hand():
+    # Literature drops the DCS triple while all four 5s are held; after 5H is played it is back.
+    root, sub = lit("5D 5C 5H 5S 9D 9C JS"), lit("5D 5C 5S 9D 9C JS")
+    agent = HeuristicAgent()
+    agent.plan(LIT, root)
+    assert agent.plan(LIT, sub) == HeuristicAgent().plan(LIT, sub)
+
+
 def test_heuristic_goes_out_when_it_can():
     table = move_of(LIT, "5D 5C", lit)
     assert act(HeuristicAgent(), state_for(LIT, lit("9D 9H"), table)).cards == lit("9D 9H")

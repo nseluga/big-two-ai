@@ -7,7 +7,8 @@ Patwa 2026 "Smart" (shed, break penalty, low orphans, save 2s).
 Play: go out if possible. With control, lead the weakest non-control planned combo,
 or the strongest when two combos are left. Following, play a planned combo that
 beats the table; spend control combos only near the end; otherwise pass. When an
-opponent is close to going out, block with the strongest play instead.
+opponent has <= 2 cards, follow with the strongest play instead (block); when leading,
+the block fires only against a 1-card opponent (lead a multi-card combo, else the top single).
 Tuned on literature dev deals only (frozen rule 5).
 """
 
@@ -44,8 +45,9 @@ class HeuristicAgent(Agent):
 
     def plan(self, variant, hand: int) -> tuple:
         """Fewest-combo breakdown of hand; ties broken by fewer low orphan singles."""
-        if variant is not self.variant or hand & ~self.root:
-            # New hand: enumerate its lead patterns once; every later hand is a subset.
+        if variant is not self.variant or hand != self.root:
+            # Re-enumerate per hand: a subset's lead moves are not always a filtered copy of
+            # the root's (literature drops the DCS triple only while all four of a rank are held).
             self.root, self.variant, self.memo, self.by_low = hand, variant, {}, {}
             for move in lead_moves(variant, hand):
                 low = move.cards & -move.cards

@@ -47,7 +47,10 @@ def main(argv=None):
     p.add_argument("--sealed-run", action="store_true", help="required to play sealed deals")
     args = p.parse_args(argv)
 
-    dirty = bool(git("status", "--porcelain", "--untracked-files=no"))
+    if args.n < 2:
+        raise SystemExit("--n must be >= 2 (σ needs two deals)")
+    # Untracked files under src/ count: the run could import them.
+    dirty = bool(git("status", "--porcelain", "--", "src", "pyproject.toml", "uv.lock"))
     if args.set == "sealed" and not (args.sealed_run and not dirty):
         raise SystemExit("sealed deals need --sealed-run and a clean git tree (frozen rule 3)")
     variant = LiteratureVariant() if args.variant == "literature" else HomeVariant(args.decks)
