@@ -3,11 +3,10 @@ name = "bigtwo"
 version = "0.0.0"
 description = "Big Two simulator, evaluation harness, and Deep Monte-Carlo agents"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["numpy>=2.5.3"]
 
 [dependency-groups]
 dev = [
-    "numpy>=2.5.3",
     "pytest",
 ]
 

@@ -6,20 +6,20 @@ requires-python = ">=3.12"
 name = "bigtwo"
 version = "0.0.0"
 source = { editable = "." }
+dependencies = [
+    { name = "numpy" },
+]
 
 [package.dev-dependencies]
 dev = [
-    { name = "numpy" },
     { name = "pytest" },
 ]
 
 [package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.5.3" }]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "numpy", specifier = ">=2.5.3" },
-    { name = "pytest" },
-]
+dev = [{ name = "pytest" }]
 
 [[package]]
 name = "colorama"
