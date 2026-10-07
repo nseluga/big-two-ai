@@ -95,6 +95,7 @@ CRAFTED = [  # (follower's hand, table play or None for control)
     ("AD AC 2D 2C 5D 5C 5H 5S", "4D 4C 9D 9H"),  # two pair
     ("9D 9C 9H 9S 4D 4C 4H 4S 3S", None),  # control with full ranks (missing-triple quirk)
     ("JD QC KD AD 2C 10S", "3D 4C 5D 6D 7D"),  # straight; J-Q-K-A-2 is a straight
+    ("3C 4C 5C 6C 7C 9D", "4D 5H 6D 7S 8S"),  # straight; lower-topped straight flush beats it
 ]
 
 

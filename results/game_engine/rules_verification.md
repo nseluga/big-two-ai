@@ -28,3 +28,18 @@ Differential test: both engines play the same deal in lockstep. At every step th
 
 ## Incident: stale bytecode (2026-10-06)
 The first 10k diff run showed 254 failures. Cause: the quad/two-pair mutation leaves the file the same byte size, and the mutation and its restore landed in the same second, so Python kept the mutated `variants.pyc` as valid. Fix: delete `__pycache__`; both 10k runs above were repeated after the clear. Future mutation runs: set `PYTHONDONTWRITEBYTECODE=1`.
+
+## Review (ml-engineer Mode 4, fresh-context Opus, diff 82a9b5d..6340a7c)
+Verdict: **PASS**, no blocking issues.
+- 10 planted bugs, each caught.
+- His code traced by hand, branch by branch, against the engine.
+- `legal_moves` takes 96–297 µs per call, with at most 530 moves in a state.
+
+Changes applied after review:
+- The invariant check now rejects the same cards offered twice, even under two pattern names.
+- New crafted diff state: a straight on the table, a straight flush with a lower top card in hand.
+
+Carried forward:
+- **Diff test compares card sets only.** A wrong pattern type or strength shows up only if a later step diverges.
+- **Literature move order is deterministic but unsorted.** RL code must not use list position as an action index.
+- **Open question for Nate:** in a 2-deck game, a leader who holds both copies of the lowest card may currently open with the bad copy alone.

@@ -24,7 +24,7 @@ def check_step(state, moves, dealt: int, played: int) -> None:
     variant, seat = state.variant, state.turn
     assert moves, "seat to act has no legal move"
     assert state.hands[seat] and not state.passed[seat]
-    assert len(set(moves)) == len(moves)
+    assert len({m.cards for m in moves}) == len(moves), "same cards offered twice"
     assert all(state.hands[seat] & m.cards == m.cards for m in moves)
     if state.last_move is not None:
         assert all(variant.beats(m, state.last_move) for m in moves if m != PASS)
